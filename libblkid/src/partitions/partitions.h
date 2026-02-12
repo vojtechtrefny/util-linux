@@ -58,6 +58,7 @@ extern int blkid_partition_set_flags(blkid_partition par, unsigned long long fla
  * partition probers
  */
 extern const struct blkid_idinfo aix_pt_idinfo;
+extern const struct blkid_idinfo dasd_pt_idinfo;
 extern const struct blkid_idinfo bsd_pt_idinfo;
 extern const struct blkid_idinfo unixware_pt_idinfo;
 extern const struct blkid_idinfo solaris_x86_pt_idinfo;
