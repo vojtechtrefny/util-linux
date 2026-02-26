@@ -23,6 +23,7 @@
 #define DASD_FMT_ID_F9		0xF9
 
 #define DASD_MAX_PARTITIONS	3
+#define DASD_VOLSER_LENGTH	6
 
 struct dasd_cchh {
 	uint16_t cc;

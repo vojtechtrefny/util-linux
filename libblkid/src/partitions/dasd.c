@@ -74,6 +74,22 @@ static void ebcdic_to_ascii_buf(const unsigned char *src, unsigned char *dst,
 	dst[len] = '\0';
 }
 
+static void set_ptuuid(blkid_probe pr, const struct dasd_volume_label *vlabel)
+{
+	char volser[DASD_VOLSER_LENGTH + 1];
+	int i;
+
+	for (i = 0; i < DASD_VOLSER_LENGTH; i++)
+		volser[i] = ebcdic_to_ascii((unsigned char) vlabel->volid[i]);
+	volser[DASD_VOLSER_LENGTH] = '\0';
+
+	/* trim trailing spaces */
+	for (i = DASD_VOLSER_LENGTH - 1; i >= 0 && volser[i] == ' '; i--)
+		volser[i] = '\0';
+
+	blkid_partitions_strcpy_ptuuid(pr, volser);
+}
+
 /*
  * Validate a Format 4 label: the key area must be 44 bytes of 0x04
  * followed by the format identifier 0xF4.
@@ -194,15 +210,17 @@ static int probe_dasd_pt(blkid_probe pr,
 	if (heads == 0)
 		goto nothing;
 
-	/* Convert volume serial from EBCDIC to ASCII */
-	{
-		unsigned char volser[7];
+	// /* Convert volume serial from EBCDIC to ASCII */
+	// {
+	// 	unsigned char volser[7];
 
-		ebcdic_to_ascii_buf((const unsigned char *) vlabel->volid,
-				    volser, sizeof(vlabel->volid));
-		blkid_rtrim_whitespace(volser);
-		blkid_partitions_strcpy_ptuuid(pr, (const char *) volser);
-	}
+	// 	ebcdic_to_ascii_buf((const unsigned char *) vlabel->volid,
+	// 			    volser, sizeof(vlabel->volid));
+	// 	blkid_rtrim_whitespace(volser);
+	// 	blkid_partitions_strcpy_ptuuid(pr, (const char *) volser);
+	// }
+	set_ptuuid(pr, vlabel);
+
 
 	if (blkid_partitions_need_typeonly(pr))
 		return BLKID_PROBE_OK;
@@ -214,16 +232,6 @@ static int probe_dasd_pt(blkid_probe pr,
 	tab = blkid_partlist_new_parttable(ls, "dasd", vtoc_offset);
 	if (!tab)
 		goto err;
-
-	/* Set table ID from volume serial */
-	{
-		unsigned char volser[7];
-
-		ebcdic_to_ascii_buf((const unsigned char *) vlabel->volid,
-				    volser, sizeof(vlabel->volid));
-		blkid_rtrim_whitespace(volser);
-		blkid_parttable_set_id(tab, volser);
-	}
 
 	/*
 	 * Enumerate partition entries. VTOC labels are stored one per block,
